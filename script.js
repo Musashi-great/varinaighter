@@ -20,8 +20,8 @@ let commonPairs = [];
 let currentSort = { column: 'score', direction: 'desc' };
 let weights = {
     volume: 40,
-    oi: 35,
-    funding: 25
+    oiRatio: 30,
+    oiTotal: 30
 };
 
 // Fetch Variational data
@@ -261,34 +261,29 @@ function fetchLighterPairsWebSocket() {
 }
 
 // Calculate priority score based on weights
-function calculateScore(pair, maxVolume, maxOI, maxFunding) {
+function calculateScore(pair, maxVolume, maxOI, maxOITotal) {
     // Normalize values to 0-1 range
     // Volume: LOWER is better (inverted score)
     const volumeScore = maxVolume > 0 ? (1 - (pair.volume24h / maxVolume)) : 1;
     
-    const oiScore = maxOI > 0 ? (pair.openInterest / maxOI) : 0;
+    // OI Ratio difference: HIGHER is better (more imbalanced = more opportunity)
+    const oiRatioScore = pair.oiDifference || 0;
     
-    // For funding, use absolute value (higher absolute = more interesting)
-    const fundingScore = maxFunding > 0 ? (Math.abs(pair.fundingRateAPR) / maxFunding) : 0;
-    
-    // OI imbalance factor
-    const oiImbalanceScore = pair.oiDifference;
+    // OI Total: LOWER is better (inverted score)
+    const oiTotalScore = maxOITotal > 0 ? (1 - (pair.openInterest / maxOITotal)) : 1;
     
     // Combined score with weights
-    const totalWeight = weights.volume + weights.oi + weights.funding;
+    const totalWeight = weights.volume + weights.oiRatio + weights.oiTotal;
     const normalizedWeights = {
         volume: weights.volume / totalWeight,
-        oi: weights.oi / totalWeight,
-        funding: weights.funding / totalWeight
+        oiRatio: weights.oiRatio / totalWeight,
+        oiTotal: weights.oiTotal / totalWeight
     };
-    
-    // OI score includes both absolute OI and imbalance
-    const combinedOiScore = (oiScore * 0.6 + oiImbalanceScore * 0.4);
     
     const score = (
         volumeScore * normalizedWeights.volume +
-        combinedOiScore * normalizedWeights.oi +
-        fundingScore * normalizedWeights.funding
+        oiRatioScore * normalizedWeights.oiRatio +
+        oiTotalScore * normalizedWeights.oiTotal
     ) * 100;
     
     return score;
@@ -526,12 +521,12 @@ function setupSearch() {
 // Setup weight controls - weights always sum to 100
 function setupWeightControls() {
     const volumeSlider = document.getElementById('volumeWeight');
-    const oiSlider = document.getElementById('oiWeight');
-    const fundingSlider = document.getElementById('fundingWeight');
+    const oiRatioSlider = document.getElementById('oiRatioWeight');
+    const oiTotalSlider = document.getElementById('oiTotalWeight');
     
     const volumeValue = document.getElementById('volumeWeightValue');
-    const oiValue = document.getElementById('oiWeightValue');
-    const fundingValue = document.getElementById('fundingWeightValue');
+    const oiRatioValue = document.getElementById('oiRatioWeightValue');
+    const oiTotalValue = document.getElementById('oiTotalWeightValue');
     
     // Toggle weight controls visibility
     document.getElementById('weightToggleBtn').addEventListener('click', () => {
@@ -542,11 +537,11 @@ function setupWeightControls() {
     // Update display values
     function updateDisplays() {
         volumeValue.textContent = `${volumeSlider.value}%`;
-        oiValue.textContent = `${oiSlider.value}%`;
-        fundingValue.textContent = `${fundingSlider.value}%`;
+        oiRatioValue.textContent = `${oiRatioSlider.value}%`;
+        oiTotalValue.textContent = `${oiTotalSlider.value}%`;
         
         // Update total display
-        const total = parseInt(volumeSlider.value) + parseInt(oiSlider.value) + parseInt(fundingSlider.value);
+        const total = parseInt(volumeSlider.value) + parseInt(oiRatioSlider.value) + parseInt(oiTotalSlider.value);
         const totalEl = document.getElementById('weightTotal');
         if (totalEl) {
             totalEl.textContent = `${total}%`;
@@ -583,22 +578,22 @@ function setupWeightControls() {
     }
     
     volumeSlider.addEventListener('input', () => {
-        adjustWeights(volumeSlider, oiSlider, fundingSlider);
+        adjustWeights(volumeSlider, oiRatioSlider, oiTotalSlider);
     });
     
-    oiSlider.addEventListener('input', () => {
-        adjustWeights(oiSlider, volumeSlider, fundingSlider);
+    oiRatioSlider.addEventListener('input', () => {
+        adjustWeights(oiRatioSlider, volumeSlider, oiTotalSlider);
     });
     
-    fundingSlider.addEventListener('input', () => {
-        adjustWeights(fundingSlider, volumeSlider, oiSlider);
+    oiTotalSlider.addEventListener('input', () => {
+        adjustWeights(oiTotalSlider, volumeSlider, oiRatioSlider);
     });
     
     // Apply weights button
     document.getElementById('applyWeightsBtn').addEventListener('click', () => {
         weights.volume = parseInt(volumeSlider.value);
-        weights.oi = parseInt(oiSlider.value);
-        weights.funding = parseInt(fundingSlider.value);
+        weights.oiRatio = parseInt(oiRatioSlider.value);
+        weights.oiTotal = parseInt(oiTotalSlider.value);
         
         recalculateScores();
         currentSort = { column: 'score', direction: 'desc' };
@@ -613,11 +608,10 @@ function recalculateScores() {
     if (commonPairs.length === 0) return;
     
     const maxVolume = Math.max(...commonPairs.map(p => p.volume24h || 0));
-    const maxOI = Math.max(...commonPairs.map(p => p.openInterest || 0));
-    const maxFunding = Math.max(...commonPairs.map(p => Math.abs(p.fundingRateAPR || 0)));
+    const maxOITotal = Math.max(...commonPairs.map(p => p.openInterest || 0));
     
     commonPairs.forEach(pair => {
-        pair.score = calculateScore(pair, maxVolume, maxOI, maxFunding);
+        pair.score = calculateScore(pair, maxVolume, null, maxOITotal);
     });
     
     commonPairs.sort((a, b) => b.score - a.score);
