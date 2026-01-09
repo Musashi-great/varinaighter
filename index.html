@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Lighter와 Variational 거래소 공통 페어 비교">
+    <title>Lighter × Variational 공통 페어</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Full Screen Loading Overlay -->
+    <div id="fullLoading" class="full-loading">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>데이터 로딩 중...</h2>
+            <p id="loadingStatus">거래소 데이터 수집 중...</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display: none;">
+        <!-- Header -->
+        <header>
+            <h1>Lighter × Variational</h1>
+        </header>
+
+        <!-- Top 3 Cards -->
+        <div id="topPairs" class="top-pairs-container">
+            <div class="top-pair-card" id="topCard1">
+                <div class="card-rank">#1</div>
+                <div class="card-ticker">-</div>
+                <div class="card-score">-</div>
+                <div class="card-details">
+                    <span class="detail-item">Vol: -</span>
+                    <span class="detail-item">OI: -</span>
+                    <span class="detail-item">Fund: -</span>
+                </div>
+            </div>
+            <div class="top-pair-card" id="topCard2">
+                <div class="card-rank">#2</div>
+                <div class="card-ticker">-</div>
+                <div class="card-score">-</div>
+                <div class="card-details">
+                    <span class="detail-item">Vol: -</span>
+                    <span class="detail-item">OI: -</span>
+                    <span class="detail-item">Fund: -</span>
+                </div>
+            </div>
+            <div class="top-pair-card" id="topCard3">
+                <div class="card-rank">#3</div>
+                <div class="card-ticker">-</div>
+                <div class="card-score">-</div>
+                <div class="card-details">
+                    <span class="detail-item">Vol: -</span>
+                    <span class="detail-item">OI: -</span>
+                    <span class="detail-item">Fund: -</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Row -->
+        <div class="controls-row">
+            <div class="controls-left">
+                <input type="text" id="searchInput" placeholder="페어 검색..." class="search-input">
+            </div>
+            <div class="controls-right">
+                <button id="weightToggleBtn" class="control-btn">가중치 설정</button>
+                <button id="refreshBtn" class="control-btn refresh-btn">🔄</button>
+            </div>
+        </div>
+
+        <!-- Weight Controls (collapsible) -->
+        <div id="weightControls" class="weight-controls" style="display: none;">
+            <div class="weight-header">
+                <h3>가중치 설정</h3>
+                <span class="weight-total">합계: <strong id="weightTotal">100%</strong></span>
+            </div>
+            <div class="weight-sliders">
+                <div class="weight-item">
+                    <label>24시간 볼륨 (낮을수록 ↑)</label>
+                    <input type="range" id="volumeWeight" min="0" max="100" value="40">
+                    <span id="volumeWeightValue">40%</span>
+                </div>
+                <div class="weight-item">
+                    <label>OI 비율차이</label>
+                    <input type="range" id="oiWeight" min="0" max="100" value="35">
+                    <span id="oiWeightValue">35%</span>
+                </div>
+                <div class="weight-item">
+                    <label>펀딩비 (절대값)</label>
+                    <input type="range" id="fundingWeight" min="0" max="100" value="25">
+                    <span id="fundingWeightValue">25%</span>
+                </div>
+            </div>
+            <button id="applyWeightsBtn" class="apply-btn">가중치 적용</button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="rank">순위</th>
+                        <th class="sortable" data-sort="ticker">Symbol</th>
+                        <th class="sortable" data-sort="volume">24h Volume</th>
+                        <th class="sortable" data-sort="oi">OI Long / Short</th>
+                        <th class="sortable" data-sort="oiRatio">L/S Ratio</th>
+                        <th class="sortable" data-sort="spread">Spread (1K)</th>
+                        <th class="sortable" data-sort="funding">Funding Rate</th>
+                        <th class="sortable" data-sort="score">Score</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be displayed here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
